@@ -92,4 +92,4 @@
 3. **Региональные особенности**: неравномерное распределение нагрузки по регионам
 
 #### Источники:
-[1. MAU & DAU] (https://hypestat.com/info/wildberries.ru)
+[1. MAU & DAU](https://hypestat.com/info/wildberries.ru)
