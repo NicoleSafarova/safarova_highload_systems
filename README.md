@@ -238,7 +238,35 @@ N_L7 = ⌈(150,000 × 1.5 × 1.3) / (15,000 × 0.7)⌉ = 28 узлов
     ↓              ↓
 Продавцы (sellers) → Склады (sklad) → Остатки (stocks)
 
+
 ![Логическая схема БД](Highload systems.jpg)
+
+# Описание всех таблиц базы данных
+
+| Таблица | Назначение | Ключевые поля | Индексы | Размер | QPS чтение | QPS запись | Консистентность | Шардинг | Особенности нагрузки |
+|---------|------------|---------------|---------|--------|------------|------------|-----------------|---------|---------------------|
+| **users** | Основная информация о пользователях | `user_id(PK)`, `email`, `phone` | `email`, `phone`, `created_at` | 50M строк, 25GB | 1000 | 50 | Строгая | `user_id` | 95% чтение, горячие данные - активные пользователи |
+| **user_profiles** | Доп. данные пользователей | `user_id(PK,FK)`, `first_name`, `last_name` | `user_id` | 50M строк, 15GB | 500 | 20 | Строгая | `user_id` | Привязана к users, синхронные обновления |
+| **user_addresses** | Адреса доставки | `address_id(PK)`, `user_id(FK)`, `type` | `user_id`, `city` | 75M строк, 15GB | 300 | 15 | Строгая | `user_id` | Частые чтения при оформлении заказов |
+| **user_sessions** | Сессии пользователей | `session_id(PK)`, `user_id(FK)`, `expires_at` | `user_id`, `expires_at` | 10M строк, 5GB | 2000 | 1000 | Слабая | `session_id` | TTL данные, высокие RPS, eventual consistency |
+| **sellers** | Информация о продавцах | `seller_id(PK)`, `company_name`, `tax_id` | `tax_id`, `status` | 500K строк, 0.5GB | 200 | 10 | Строгая | `seller_id` | Низкая частота изменений |
+| **seller_contacts** | Контактные лица | `contact_id(PK)`, `seller_id(FK)`, `email` | `seller_id`, `email` | 1M строк, 0.2GB | 100 | 5 | Строгая | `seller_id` | Вторичные данные продавцов |
+| **seller_bank_accounts** | Банковские счета | `account_id(PK)`, `seller_id(FK)`, `account_number` | `seller_id`, `is_primary` | 500K строк, 0.3GB | 50 | 5 | Строгая | `seller_id` | Финансовые данные, высокая важность |
+| **categories** | Категории товаров | `category_id(PK)`, `name`, `parent_id` | `parent_id`, `slug` | 10K строк, 0.1GB | 1000 | 5 | Строгая | `category_id` | Иерархические данные, кэшируются |
+| **products** | Основная информация о товарах | `product_id(PK)`, `seller_id(FK)`, `category_id(FK)` | `seller_id`, `category_id`, `status` | 100M строк, 100GB | 5000 | 200 | Слабая | `category_id` | Высокое чтение, кэширование, поисковые индексы |
+| **product_attributes** | Характеристики товаров | `attribute_id(PK)`, `product_id(FK)`, `name`, `value` | `product_id`, `name` | 500M строк, 75GB | 3000 | 150 | Слабая | `product_id` | Фильтрация по атрибутам, полнотекстовый поиск |
+| **product_images** | Изображения товаров | `image_id(PK)`, `product_id(FK)`, `url`, `order` | `product_id`, `is_primary` | 300M строк, 500GB | 8000 | 300 | Слабая | `product_id` | CDN-кэширование, метаданные изображений |
+| **product_prices** | История цен товаров | `price_id(PK)`, `product_id(FK)`, `price`, `effective_date` | `product_id`, `effective_date` | 200M строк, 40GB | 1000 | 200 | Слабая | `product_id` | Временные ряды, аналитические запросы |
+| **orders** | Заголовки заказов | `order_id(PK)`, `user_id(FK)`, `status`, `total_amount` | `user_id`, `created_at`, `status` | 200M строк, 200GB | 2000 | 100 | Строгая | `user_id` | Финансовые транзакции, ACID требования |
+| **order_items** | Состав заказов | `order_item_id(PK)`, `order_id(FK)`, `product_id(FK)` | `order_id`, `product_id` | 600M строк, 180GB | 3000 | 300 | Строгая | `order_id` | Связана с orders, каскадные операции |
+| **payments** | Платежи | `payment_id(PK)`, `order_id(FK)`, `amount`, `status` | `order_id`, `status`, `created_at` | 200M строк, 60GB | 1500 | 100 | Строгая | `order_id` | Высокая важность, идемпотентность |
+| **sklad** | Склады | `warehouse_id(PK)`, `seller_id(FK)`, `location` | `seller_id`, `city` | 100K строк, 0.1GB | 500 | 10 | Строгая | `seller_id` | Географические данные |
+| **stocks** | Остатки товаров | `stock_id(PK)`, `product_id(FK)`, `warehouse_id(FK)`, `quantity` | `product_id`, `warehouse_id` | 150M строк, 45GB | 10000 | 2000 | Строгая | `product_id` | Высокая конкуренция, оптимистичные блокировки |
+| **carts** | Корзины покупок | `cart_id(PK)`, `user_id(FK)`, `session_id` | `user_id`, `session_id` | 10M строк, 5GB | 5000 | 1000 | Слабая | `user_id` | Временные данные, TTL, eventual consistency |
+| **cart_items** | Элементы корзины | `cart_item_id(PK)`, `cart_id(FK)`, `product_id(FK)` | `cart_id`, `product_id` | 50M строк, 15GB | 8000 | 2000 | Слабая | `cart_id` | Частые обновления, сессионные данные |
+| **product_search_cache** | Кэш поиска | `cache_key(PK)`, `query`, `results(JSON)`, `expires_at` | `query`, `expires_at` | 5M строк, 20GB | 15000 | 500 | Слабая | `cache_key` | TTL, инвалидация по времени/событиям |
+| **user_recommendations** | Рекомендации | `recommendation_id(PK)`, `user_id(FK)`, `product_ids(JSON)` | `user_id`, `created_at` | 50M строк, 25GB | 8000 | 100 | Слабая | `user_id` | Персональные данные, ML-обновления |
+| **rate_limit_buckets** | Ограничение запросов | `bucket_id(PK)`, `identifier`, `count`, `window_end` | `identifier`, `window_end` | 1M строк, 2GB | 20000 | 10000 | Слабая | `identifier` | Высокий RPS, TTL, статистические данные |
 
 
 ## Источники:
@@ -261,3 +289,5 @@ N_L7 = ⌈(150,000 × 1.5 × 1.3) / (15,000 × 0.7)⌉ = 28 узлов
 [9. Количество продавцов](https://oborot.ru/news/skolko-zarabatyvayut-na-marketplejsah-tolko-18-sellerov-na-wildberries-i-13-sellerov-na-ozon-imeyut-oborot-bolshe-milliona-i195968.html#:~:text=%D0%9A%D0%BE%D0%BB%D0%B8%D1%87%D0%B5%D1%81%D1%82%D0%B2%D0%BE%20%D0%BF%D1%80%D0%BE%D0%B4%D0%B0%D0%B2%D1%86%D0%BE%D0%B2,%D0%BF%D0%BB%D0%BE%D1%89%D0%B0%D0%B4%D0%BA%D0%B5%20123%20652%20%D0%B0%D0%BA%D1%82%D0%B8%D0%B2%D0%BD%D1%8B%D1%85%20%D0%BF%D1%80%D0%BE%D0%B4%D0%B0%D0%B2%D1%86%D0%B0.)
 
 [10. Больше всего заказов](https://wiki.mpstats.io/%D0%9B%D0%B8%D1%87%D0%BD%D1%8B%D0%B9_%D0%BA%D0%B0%D0%B1%D0%B8%D0%BD%D0%B5%D1%82/%D0%93%D0%B5%D0%BE%D0%B3%D1%80%D0%B0%D1%84%D0%B8%D1%8F_%D0%B7%D0%B0%D0%BA%D0%B0%D0%B7%D0%BE%D0%B2)
+
+[11. Логическая схема БД](https://miro.com/app/board/uXjVJ8utvA8=/)
