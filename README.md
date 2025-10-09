@@ -261,7 +261,6 @@ N_L7 = ⌈(150,000 × 1.5 × 1.3) / (15,000 × 0.7)⌉ = 28 узлов
 | **cart_items** | Элементы корзины |  "product_id", "cart_id" |
 | **product_search_cache** | Кэш поиска | - |
 | **user_recommendations** | Рекомендации |  "user_id" |
-| **rate_limit_buckets** | Ограничение запросов |   "user_id" |
 
 ## Источники:
 [1. DAU & MAU;](https://mediascope.net/upload/iblock/4fe/y85jka00l645h8f5qaw2zd52fhxrz4x3/Ecom%202024_Mediascope.pdf)
