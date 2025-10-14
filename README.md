@@ -134,6 +134,13 @@ https://seller.wildberries.ru/ - для продавцов
 После попадания пользователя на один из ДЦ, его запрос обрабатывается L4-балансировщиком, который использует алгоритм Least Connections (распределяет на машину с наименьшим числом подключений) для распределения трафика между L7 балансировщиками. Каждый L7-балансировщик работает на отдельной машине с установленным Nginx, где происходит терминация SSL и распределение по серверам на бэкенде.
 ![Схема локальной балансировки](Локальная%20балансировка.png)
 
+| Компонент     | Формула резервирования |
+|-------------|-----------------|
+| L4-балансировщики | N+1 |
+| L7-балансировщики | N+1 |
+| Бэкенд серверы | N+1 |
+
+
 ## 5. Логическая БД
 
 Пользователи (users) → Заказы (orders) → Элементы заказа (order_items)
@@ -144,25 +151,66 @@ https://seller.wildberries.ru/ - для продавцов
 
 ![Логическая схема БД](Highload%20Diagram.png)
 
-| Таблица | Назначение | FK |
-|---------|------------|---------------------|
-| **users** | Основная информация о пользователях |  - |
-| **user_addresses** | Адреса доставки | "user_id" |
-| **user_preferences** | Адреса ПВЗ | "user_id" |
-| **sellers** | Информация о продавцах |  - |
-| **categories** | Категории товаров |   - |
-| **products** | Основная информация о товарах |  "seller_id", "category_id" |
-| **product_attributes** | Характеристики товаров |   "product_id" |
-| **product_images** | Изображения товаров |   "product_id" |
-| **orders** | Заголовки заказов |   "user_id" |
-| **order_items** | Состав заказов |  "order_id", "product_id", "seller_id" |
-| **payments** | Платежи |   "oreder_id" |
-| **sklad** | Склады |   "seller_id" |
-| **stocks** | Остатки товаров |  "product_id", "sklad_id" |
-| **carts** | Корзины покупок |   "user_id" |
-| **cart_items** | Элементы корзины |  "product_id", "cart_id" |
-| **product_search_cache** | Кэш поиска | - |
-| **user_recommendations** | Рекомендации |  "user_id" |
+| Таблица | Назначение |
+|---------|------------|
+| **users** | Основная информация о пользователях |
+| **user_addresses** | Адреса доставки | 
+| **user_preferences** | Адреса ПВЗ | 
+| **sellers** | Информация о продавцах | 
+| **categories** | Категории товаров | 
+| **products** | Основная информация о товарах |  
+| **product_images** | Изображения товаров | 
+| **orders** | Заголовки заказов |   
+| **order_items** | Состав заказов |  
+| **sklad** | Склады |  
+| **stocks** | Остатки товаров |  
+| **carts** | Корзины покупок |   
+| **cart_items** | Элементы корзины |  
+| **product_search_cache** | Кэш поиска | 
+| **sessions** | Сессии |  
+| **replies** | Отзывы |  
+
+#### Расчтеты
+
+| Название таблицы | Расчеты | Результат |  Запись | Чтение |
+|------------------|------|------|-------------------|-------------------|
+| **users** | 86.3M × 2 КБ | 172.6 ГБ | 410 QPS | 8,200 QPS |
+| **user_addresses** | 129.5M × 1 КБ | 129.5 ГБ | 245 QPS | 4100 QPS |
+| **user_preferences** | 86.3M × 0.5 КБ | 43.2 ГБ | 165 QPS | 6560 QPS |
+| **sellers** | 840K × 3 КБ | 2.5 ГБ | 84 QPS | 3360 QPS |
+| **categories** | 7541 × 1 КБ | 7541 КБ | 1 QPS | 1,000 QPS |
+| **products** | 1M × 5 КБ | 5 ГБ | 100 QPS | 10,000 QPS |
+| **product_images** | 5M × 10 КБ | 50 ГБ | 200 QPS | 20,000 QPS |
+| **orders** | 50M × 3 КБ | 150 ГБ | 100 QPS | 2,000 QPS |
+| **order_items** | 200M × 2 КБ | 400 ГБ | 200 QPS | 3,000 QPS |
+| **sklad** | 1K × 2 КБ | 2 МБ | 10 QPS | 500 QPS |
+| **stocks** | 2M × 1 КБ | 2 ГБ | 1,000 QPS | 50,000 QPS |
+| **carts** | 100K × 1 КБ | 100 МБ | 500 QPS | 5,000 QPS |
+| **cart_items** | 500K × 1 КБ | 500 МБ | 1,000 QPS | 10,000 QPS |
+| **product_search_cache** | 100K × 5 КБ | 500 МБ | 10,000 QPS | 100,000 QPS |
+| **sessions** | 50K × 10 КБ | 500 МБ | 50,000 QPS | 200,000 QPS |
+| **replies** | 5M × 2 КБ | 10 ГБ | 100 QPS | 1,000 QPS |
+
+#### Консистентность
+
+| Название таблицы | Консистентность |
+|------------------|-------------------|
+| **users** | strong |
+| **user_addresses** | strong |
+| **user_preferences** | eventual |
+| **sellers** | strong  |
+| **categories** | strong |
+| **products** | strong |
+| **product_images** | eventual |
+| **orders** | strict |
+| **order_items** | strict |
+| **sklad** | strict |
+| **stocks** | strict |
+| **carts** | strong |
+| **cart_items** | strong |
+| **product_search_cache** | eventual |
+| **sessions** | session |
+| **replies** | eventual  |
 
 ## Источники:
 [1. DAU & MAU;](https://mediascope.net/upload/iblock/4fe/y85jka00l645h8f5qaw2zd52fhxrz4x3/Ecom%202024_Mediascope.pdf)
