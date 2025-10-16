@@ -232,24 +232,24 @@ https://seller.wildberries.ru/ - для продавцов
 ![Физическая схема БД](Highload%20Diagram.png)
 
 
-| Таблица | СУБД | Шардинг | Индексы | Денормализация |
-|---------|------|---------|---------|----------------|
-| users | PostgreSQL | hash(user_id) | PK(id), email, created_at | - |
-| user_addresses | PostgreSQL | hash(user_id) | PK(id), user_id | - |
-| user_preferences | PostgreSQL | hash(user_id)  | PK(id), user_id | - |
-| sellers | PostgreSQL | hash(seller_id) | PK(id), rating | - |
-| categories | PostgreSQL | - | PK(id) | - |
-| products | PostgreSQL | hash(product_id)  | PK(id), seller_id, category_id, created_at | - |
-| product_images | MongoDB | hash(product_id)  | product_id | Методанные в JSON |
-| orders | PostgreSQL | range(user_id) | PK(id), user_id, order_date, status | - |
-| order_items | PostgreSQL | hash(order_id)  | PK(id), order_id, product_id | - |
-| sklad | PostgreSQL | - | PK(id), city, capacity | - |
-| stocks | MongoDB | hash(product_id) | PK(id), sklad_id, product_id | - |
-| carts | PostgreSQL | hash(user_id) | PK(id), user_id, session_id | TTL 30 дней |
-| cart_items | MongoDB | hash(user_id) | cart_id, product_id | Вложенные структуры |
-| product_search_cache | Redis | query_hash (hash) | {query_hash: 1}, {category_id: 1} | Полнотекстовый поиск |
-| sessions | Redis | hash(session_id) | Ключ: session:{session_id} | TTL 30 минут |
-| replies | PostgreSQL | hash(user_id) | PK(id), seller_id, user_id, rating | - |
+| Таблица | СУБД | Шардинг | Индексы | Денормализация | Партиционирование |
+|---------|------|---------|---------|----------------|-----------|
+| users | PostgreSQL | hash(id) | PK(id), email, created_at | - | По created_at|
+| user_addresses | PostgreSQL | hash(user_id) | PK(id), user_id | - | - |
+| user_preferences | PostgreSQL | hash(user_id)  | PK(id), user_id | - |- |
+| sellers | PostgreSQL | hash(seller_id) | PK(id), rating | - |- |
+| categories | PostgreSQL | - | PK(id) | - | - |
+| products | PostgreSQL | hash(product_id)  | PK(id), seller_id, category_id, created_at | - | По category_id |
+| product_images | MongoDB | hash(product_id)  | product_id | Методанные в JSON |- |
+| orders | PostgreSQL | hash(user_id) | PK(id), user_id, order_date, status | - | По order_date |
+| order_items | PostgreSQL | hash(order_id)  | PK(id), order_id, product_id | - |По order_id |
+| sklad | PostgreSQL | - | PK(id), city, capacity | - |По city |
+| stocks | MongoDB | hash(product_id) | PK(id), sklad_id, product_id | - |По sklad_id |
+| carts | PostgreSQL | hash(user_id) | PK(id), user_id, session_id | - | - |
+| cart_items | MongoDB | hash(user_id) | cart_id, product_id | - | - |
+| product_search_cache | Redis Cluster | Автошардинг | {id: 1}, {category_id: 1} | Полнотекстовый поиск | - |
+| sessions | Redis | hash(session_id) | {session_id: 1} | TTL 30 минут | - |
+| replies | PostgreSQL | hash(seller_id) | PK(id), seller_id, user_id, rating | - | - |
 
 ## Источники:
 [1. DAU & MAU;](https://mediascope.net/upload/iblock/4fe/y85jka00l645h8f5qaw2zd52fhxrz4x3/Ecom%202024_Mediascope.pdf)
