@@ -240,7 +240,7 @@ https://seller.wildberries.ru/ - для продавцов
 | sellers | PostgreSQL | hash(seller_id) | PK(id), rating | - |- |
 | categories | PostgreSQL | - | PK(id) | - | - |
 | products | PostgreSQL | hash(product_id)  | PK(id), seller_id, category_id, created_at | - | По category_id |
-| product_images | MongoDB | hash(product_id)  | product_id | Методанные в JSON |- |
+| product_images | MongoDB | hash(product_id)  | product_id | - |- |
 | orders | PostgreSQL | hash(user_id) | PK(id), user_id, order_date, status | - | По order_date |
 | order_items | PostgreSQL | hash(order_id)  | PK(id), order_id, product_id | - |По order_id |
 | sklad | PostgreSQL | - | PK(id), city, capacity | - |По city |
