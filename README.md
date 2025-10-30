@@ -241,13 +241,13 @@ https://seller.wildberries.ru/ - для продавцов
 | sellers | PostgreSQL | hash(seller_id) | PK(id), rating | - |- |
 | categories | PostgreSQL | - | PK(id) | - | - |
 | products | PostgreSQL | hash(product_id)  | PK(id), seller_id, category_id, created_at | - | По category_id |
-| product_images | MongoDB | hash(product_id)  | product_id | - |- |
+| product_images | PostgreSQL | hash(product_id)  | product_id | - |- |
 | orders | PostgreSQL | hash(user_id) | PK(id), user_id, order_date, status | - | По order_date |
 | order_items | PostgreSQL | hash(order_id)  | PK(id), order_id, product_id | - |По order_id |
 | sklad | PostgreSQL | - | PK(id), city, capacity | - |По city |
-| stocks | MongoDB | hash(product_id) | PK(id), sklad_id, product_id | - |По sklad_id |
+| stocks | PostgreSQL | hash(product_id) | PK(id), sklad_id, product_id | - |По sklad_id |
 | carts | PostgreSQL | hash(user_id) | PK(id), user_id, session_id | - | - |
-| cart_items | MongoDB | hash(user_id) | cart_id, product_id | - | - |
+| cart_items | PostgreSQL | hash(user_id) | cart_id, product_id | - | - |
 | product_search_cache | Redis Cluster | Автошардинг | {id: 1}, {category_id: 1} | Полнотекстовый поиск | - |
 | sessions | Redis | hash(session_id) | {session_id: 1} | TTL 30 минут | - |
 | replies | PostgreSQL | hash(seller_id) | PK(id), seller_id, user_id, rating | - | - |
@@ -293,11 +293,13 @@ PQ (Product Quantization) — сжатие векторов
 | Технологии | Область применения | Мотивационная часть |
 |------------------|-------------------|----------|
 | RabbitMQ | Оформление заказов, оплата, генерация аналитики для продавцов, уведомления | RabbitMQ обеспечит отказоустойчивую асинхронную обработку 4.5 миллионов заказов ежедневно, гарантируя стабильность платформы Wildberries даже в периоды экстремальных нагрузок и предотвращая потерю выручки из-за технических сбоев. |
-| JavaScript (React) | Для разработки фронтенда | React - фреймворк для быстрой отрисовки страницы пользователю. React использует Virtual DOM, что позволяет перерисовывать только определенные элементы, а не всю страницу  |
-| Go | Для разработки бэкенда | Уникальная модель параллелизма Go позволяет эффективно обрабатывать множество одновременных операций|
+| TypeScript (React) | Для разработки фронтенда | React - фреймворк для быстрой отрисовки страницы пользователю. React использует Virtual DOM, что позволяет перерисовывать только определенные элементы, а не всю страницу  |
+| Golang | Для разработки бэкенда | Уникальная модель параллелизма Go позволяет эффективно обрабатывать множество одновременных операций|
 | API Gateway (Nginx) | Везде  | Маршрутизация запросов по микросервисам |
 | PostgreSQL + WAL (Write-Ahead Logging) | Для  PostgreSQL  | Предотвращения потери данных в случае сбоя оборудования, сбоя PostgreSQL и т.д. |
 | Prometheus + Grafana| Мониторинг и отрисовка метрик| Выявлять проблемы, анализировать производительность и принимать обоснованные решения по оптимизации |
+|Kotlin + Swift| Для мобильной разработки| Kotlin - официальный язык для разработки под Android, Swift - под IOS|
+|Redis| БД для кэша| Redis обеспечивает экстремальную производительность в миллионы операций в секунду с задержкой менее 1 мс, выступая критически важным компонентом для кэширования в высоконагруженных системах|
 
 
 
