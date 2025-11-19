@@ -175,15 +175,15 @@ https://seller.wildberries.ru/ - для продавцов
 | **sellers** | 840K × 3 КБ | 2.5 ГБ | 0.3 QPS | 120 QPS |
 | **categories** | 50K × 1 КБ | 50 МБ | 0.1 QPS | 821 QPS |
 | **products** | 44M × 5 КБ | 220 ГБ | 52 QPS | 4 500 QPS |
-| **product_images** | 440M × 5 КБ | 2.2 ТБ | 7 QPS | 49 305 QPS |
-| **orders** | 1.65B × 3 КБ | 4.9 ТБ | 521 QPS | 205 QPS |
-| **order_items** | 8.2B × 2 КБ | 16.4 ТБ | 2 600 QPS | 620 QPS |
+| **product_images** | 440M × 2 КБ | 880 ГБ | 7 QPS | 49 305 QPS |
+| **orders** | 1.65B × 1 КБ | 1.65 ТБ | 521 QPS | 205 QPS |
+| **order_items** | 8.2B × 1 КБ | 8.2 ТБ | 2 600 QPS | 620 QPS |
 | **sklad** | 10K × 2 КБ | 20 МБ | 0.01 QPS | 41 QPS |
 | **stocks** | 44M × 1 КБ | 44 ГБ | 2 604 QPS | 49 300 QPS |
 | **carts** | 3.55M × 1 КБ | 3.55 ГБ | 822 QPS | 821 QPS |
 | **cart_items** | 17.75M × 1 КБ | 17.75 ГБ | 6 163 QPS | 1 643 QPS |
-| **product_search_cache** | 426M × 5 КБ | 2.13 ТБ | 1 232 QPS | 2 470 QPS |
-| **sessions** | 35.5M × 10 КБ | 355 ГБ | 500 QPS | 410 QPS |
+| **product_search_cache** | 44M × 3 КБ | 132 ГБ | 1 232 QPS | 2 470 QPS |
+| **sessions** | 35.5M × 5 КБ | 177.5 ГБ | 500 QPS | 410 QPS |
 | **replies** | 440M × 2 КБ | 880 ГБ | 26 QPS | 4 930 QPS |
 
 
@@ -236,21 +236,21 @@ https://seller.wildberries.ru/ - для продавцов
 | Таблица | СУБД | Шардинг | Индексы | Денормализация | Партиционирование |
 |---------|------|---------|---------|----------------|-----------|
 | users | PostgreSQL | hash(id) | PK(id), email, created_at | - | По created_at|
-| user_addresses | PostgreSQL | hash(user_id) | PK(id), user_id | - | - |
-| user_preferences | Redis | hash(user_id)  | PK(id), user_id | - |- |
-| sellers | PostgreSQL | hash(seller_id) | PK(id), rating | - |- |
+| user_addresses | PostgreSQL | - | PK(id), user_id | - | - |
+| user_preferences | Redis | -  | PK(id), user_id | - |- |
+| sellers | PostgreSQL | - | PK(id), rating | - |- |
 | categories | PostgreSQL | - | PK(id) | - | - |
-| products | PostgreSQL | hash(product_id)  | PK(id), seller_id, category_id, created_at | - | По category_id |
-| product_images | PostgreSQL | hash(product_id)  | product_id | - |- |
+| products | PostgreSQL | hash(seller_id)  | PK(id), seller_id, category_id, created_at | - | По category_id |
+| product_images | PostgreSQL | - | product_id | - |- |
 | orders | PostgreSQL | hash(user_id) | PK(id), user_id, order_date, status | - | По order_date |
 | order_items | PostgreSQL | hash(order_id)  | PK(id), order_id, product_id | - |По order_id |
 | sklad | PostgreSQL | - | PK(id), city, capacity | - |По city |
-| stocks | PostgreSQL | hash(product_id) | PK(id), sklad_id, product_id | - |По sklad_id |
-| carts | PostgreSQL | hash(user_id) | PK(id), user_id, session_id | - | - |
-| cart_items | PostgreSQL | hash(user_id) | cart_id, product_id | - | - |
-| product_search_cache | Redis Cluster | Автошардинг | {id: 1}, {category_id: 1} | Полнотекстовый поиск | - |
-| sessions | Redis | hash(session_id) | {session_id: 1} | TTL 30 минут | - |
-| replies | PostgreSQL | hash(seller_id) | PK(id), seller_id, user_id, rating | - | - |
+| stocks | PostgreSQL | - | PK(id), product_id | - |По sklad_id |
+| carts | PostgreSQL | - | PK(id), user_id, session_id | - | - |
+| cart_items | PostgreSQL | - | cart_id, product_id | - | - |
+| product_search_cache | Redis Cluster | Автошардинг | {id: 1}, {category_id: 1} | Векторный поиск | - |
+| sessions | Redis | - | {session_id: 1} | TTL год  | - |
+| replies | PostgreSQL | hash(seller_id) | PK(id), seller_id, user_id | - | - |
 
 
 ## 7.Алгоритмы
@@ -317,6 +317,19 @@ PQ (Product Quantization) — сжатие векторов
 ## 10.Схема проекта
 
 ![Схема проекта](s.png)
+
+## 11.Список серверов
+
+| Компонент | Технологии | Механизм резервирования | 
+|-------------------|------------|-------------------------|
+| **Глобальная балансировка** | BGP Anycast | Распределение трафика между 2 ДЦ. При сбое 1 ДЦ, трафик автоматически переключается полностью на другой (Health Checks автоматически исключают недоступный ДЦ) | 
+| **L7 Балансировщики** | NGINX  | N+1 реплики между ДЦ, где PodAntiAffinity предотвращает размещение новых подов на одних и тех же узлах с другими подами | 
+| **Микросервисы** | Kubernetes + Docker | 2+ реплики на сервис, обеспечение избыточности засчет распределения подов по узлам кластера с автоматическим перезапуском на резервных узлах при сбоях. Реализуется через Replicas, Deployments и системы бэкапа. | 
+| **Хранилище файлов** | S3-совместимое (Yandex Object Storage + MinIO(резерв)) | Делаем 2 копии данных. Основное хранение будет в 1 ДЦ, а реплика во 2. | 
+| **Базы данных** | PostgreSQL + Patroni | Ассихронная репликация между ДЦ и синхроонная внутри ДЦ. Автоматический failover внутри кластера с помощью Patroni. Для снижения задержки - асинхронные реплики для чтения в каждом ДЦ. | 
+| **Кэш данных** | Redis Cluster |  Redis Cluster с межцентровой репликацией и автоматическим failover через Redis Sentinel, где каждый мастер-шард имеет синхронную реплику в другом ДЦ для мгновенного восстановления при сбоях. | 
+| **Аналитика + Мониторинг** | ClickHouse + Prometheus | Распределенный кластер ClickHousr с шардами в обоих ДЦ (для аналитики). Независимый сбор метрик Prometheus, и если один отвалится, другой продолжает сбор (для мониторинга). Резервирование мониторинга работает через дублирование всех компонентов с автоматическим переключением и централизованным хранением метрик| 
+| **Очереди заказов** | RabbitMQ Cluster |  Растянутый кластер между ДЦ с репликацией очередей на ноды в обоих ДЦ. |
 
 ##### Описание
 
