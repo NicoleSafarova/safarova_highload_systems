@@ -343,29 +343,28 @@ PQ (Product Quantization) — сжатие векторов
 ##### Собственное железо
 | Ноды | Конфигурация | CPU (Ядра) | Колиство | RAM |Обоснование|
 |--------|------------|----------|-------|------------|----------|
-| **PostgreSQL** | 	2x6338/8x32GB/2xNVMe4T/2x25Gb/s |64  |4 |256|32 ядра × 3 = 96 ядер|
-| **Redis Cluster (кэш)** | 2x6338/16x32GB/2xNVMe4T/2x25Gb/s | 64 | 6|512|	148 ядер / 64 = 2.3|
-| **Kubernetes** | 2x6338/8x32GB/2xNVMe2T/2x25Gb/s | 64 | 4|256|174 ядра / 64 = 2.7|
-| **NGINX** | 2x6338/4x32GB/2xNVMe1T/2x25Gb/s | 64 |4|128|53 ядра / 64 = 0.8|
-| **BGP Anycast** | 2x6338/4x32GB/2xNVMe1T/2x25Gb/s | 64 |4|128|53 ядра / 64 = 0.8|
-| **RabbitMQ** | 2x6338/8x32GB/4xNVMe2T/2x25Gb/s | 64 |4 |256|	29 ядер / 64 = 0.45|
-| **API Gateway** | 	2x6338/16x32GB/2xNVMe4T/2x25Gb/s |64  |4 |512|
-| **Prometheus + Grafana** | 2x6338/32x32GB/2xNVMe4T/2x25Gb/s | 64 | 4|1024|
-| **CDN+Edge** | 	2x6338/8x32GB/4xNVMe2T/2x25Gb/s | 64 | 8|512|
-| **K8s Worker Nodes** | 2x6338/16x32GB/2xNVMe4T/2x25Gb/s | 64 |6 |1024|
+| **PostgreSQL** | 	AMD EPYC 7003/8x32GB/2xNVMe4T/2x25Gb/s |64  |4 |256|32 ядра × 3 = 96 ядер|
+| **Redis Cluster (кэш)** | AMD EPYC 7003/16x32GB/2xNVMe4T/2x25Gb/s | 64 | 6|512|	148 ядер / 64 = 2.3|
+| **Kubernetes** | AMD EPYC 7003/8x32GB/2xNVMe2T/2x25Gb/s | 64 | 4|256|174 ядра / 64 = 2.7|
+| **NGINX** | AMD EPYC 7003/4x32GB/2xNVMe1T/2x25Gb/s | 64 |4|128|53 ядра / 64 = 0.8|
+| **BGP Anycast** | AMD EPYC 7003/4x32GB/2xNVMe1T/2x25Gb/s | 64 |4|128|53 ядра / 64 = 0.8|
+| **RabbitMQ** | AMD EPYC 7003/8x32GB/4xNVMe2T/2x25Gb/s | 64 |4 |256|	29 ядер / 64 = 0.45|
+| **API Gateway** | 	Xeon Gold 6430/16x32GB/2xNVMe4T/2x25Gb/s |64  |4 |512|
+| **Prometheus + Grafana** | Xeon Gold 6430/32x32GB/2xNVMe4T/2x25Gb/s | 64 | 4|1024|
+| **CDN+Edge** | 	Xeon Gold 6430/8x32GB/4xNVMe2T/2x25Gb/s | 64 | 8|512|
+| **K8s Worker Nodes** | Xeon Gold 6430/16x32GB/2xNVMe4T/2x25Gb/s | 64 |6 |1024|
 
 | Ноды | Размещение| Стоимость|
 |--------|----------|--------|
-| **PostgreSQL** | Железо|$5400|
-| **Redis Cluster (кэш)** |Железо |$7800|
-| **Kubernetes** | Железо|$4200|
-| **NGINX** | Железо|$3200|
-| **BGP Anycast** |Железо |$3200|
-| **RabbitMQ** | Железо|$4800|
-| **API Gateway** | Kubernetes	|$3600|
-| **Prometheus + Grafana** |Kubernetes|$4800|
-| **CDN+Edge** | 	Kubernetes|$3600|
-| **K8s Worker Nodes** |Kubernetes |$12000|
+| **PostgreSQL** | Железо|€2871|
+| **Redis Cluster (кэш)** |Железо |€3500|
+| **Kubernetes** | Железо|€2371|
+| **NGINX** | Железо|€1800|
+| **BGP Anycast** |Железо |€1800|
+| **RabbitMQ** | Железо|€2600|
+| **API Gateway** | Kubernetes	|€1902|
+| **Prometheus + Grafana** |Kubernetes|€1902|
+| **CDN+Edge** | 	Kubernetes|€1902|
 
 ##### Суммарные затраты
 | Ноды | Всего |
