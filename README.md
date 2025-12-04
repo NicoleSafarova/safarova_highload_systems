@@ -248,7 +248,7 @@ https://seller.wildberries.ru/ - для продавцов
 | stocks | PostgreSQL | - | PK(id), product_id | - |По sklad_id |
 | carts | PostgreSQL | - | PK(id), user_id, session_id | - | - |
 | cart_items | PostgreSQL | - | cart_id, product_id | - | - |
-| product_search_cache | Redis Cluster | Автошардинг | {id: 1}, {category_id: 1} | Векторный поиск | - |
+| product_search_cache | RediSearch | Автошардинг | {id: 1}, {category_id: 1} | Векторный поиск | - |
 | sessions | Redis | - | {session_id: 1} | TTL год  | - |
 | replies | PostgreSQL | hash(seller_id) | PK(id), seller_id, user_id | - | - |
 
@@ -332,7 +332,7 @@ PQ (Product Quantization) — сжатие векторов
 | **BGP Anycast L4** | 45000 | 135000  |27|16|Глобальная балансировка на L3/L4. Меньше CPU чем NGINX |
 | **NGINX L7** | 35000 | 105000  |53|64|HTTP/HTTPS балансировка, SSL termination. Высокая нагрузка, кэширование, маршрутизация|
 | **RabbitMQ** | 9507 | 28521  | 29|128|Очереди нотификации и оплаты через WB кошелек. Большой объем сообщений, требуется много RAM для буферизации|
-| **Redis** | 49305 | 147915  |148|512|Кэш сессий, корзин, поиска. Экстремальный RPS, все данные в памяти, шардирование|
+| **Redis (RediSearch)** | 49305 | 147915  |148|512|Кэш сессий, корзин, поиска. Экстремальный RPS, все данные в памяти, шардирование|
 | **PostgreSQL** | 2604 | 7812  |32|256|Основное хранилище данных. Сложная нагрузка, репликация|
 | **Prometheus+Grafana** | 500 | 1500  |8|32|Мониторинг, сбор метрик. Постоянная запись временных рядов, агрегация данных |
 
